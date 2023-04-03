@@ -1,6 +1,7 @@
 use chrono::{Local, NaiveDateTime};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
-// use log::info;
+use log::info;
+use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{schema::humiture_datas, DbError};
@@ -26,6 +27,21 @@ pub struct NewHumitureData {
 }
 
 impl NewHumitureData {
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        let fmt = "%Y-%m-%d %H:%M:%S";
+        let naive = Local::now().format(fmt).to_string();
+        info!("ts: {}", naive);
+
+        NewHumitureData {
+            sn: String::from("00000001"),
+            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            device_id: String::from("test"),
+            temperature: rng.gen_range(-20.0..50.0),
+            humidity: rng.gen_range(1.0..100.0),
+        }
+    }
+
     // get new data from bytes string
     pub fn from_string(bytes: &str) -> Result<Self, std::io::Error> {
         let mut t = 0.0;
