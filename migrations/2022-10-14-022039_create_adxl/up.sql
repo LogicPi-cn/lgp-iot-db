@@ -1,0 +1,20 @@
+CREATE TABLE adxl_datas (
+    id        SERIAL     PRIMARY KEY,
+    device_id INT        NOT NULL,
+    ts        TIMESTAMP WITH TIME ZONE NOT NULL,
+    x         REAL       NOT NULL,
+    y         REAL       NOT NULL,
+    z         REAL       NOT NULL,
+    xf        REAL       NOT NULL,
+    yf        REAL       NOT NULL,
+    zf        REAL       NOT NULL,
+    ax        REAL       NOT NULL,
+    ay        REAL       NOT NULL,
+    az        REAL       NOT NULL,
+    axf       REAL       NOT NULL,
+    ayf       REAL       NOT NULL,
+    azf       REAL       NOT NULL,
+    t         REAL       NOT NULL,
+    tf        REAL       NOT NULL,
+    bat       REAL       NOT NULL
+)
