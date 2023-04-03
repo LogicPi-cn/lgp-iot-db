@@ -16,7 +16,7 @@ pub struct HumitureData {
     pub humidity: f32,
 }
 
-#[derive(Debug, Insertable, Deserialize)]
+#[derive(Debug, Insertable, Serialize, Deserialize)]
 #[diesel(table_name = humiture_datas)]
 pub struct NewHumitureData {
     pub sn: String,        // Device Serial Number
