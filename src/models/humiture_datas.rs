@@ -4,7 +4,7 @@ use log::info;
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{schema::humiture_datas, DbError};
+use crate::{errors::PkgError, schema::humiture_datas, DbError};
 
 #[derive(Serialize, Deserialize, Queryable, Debug, AsChangeset)]
 pub struct HumitureData {
@@ -43,7 +43,7 @@ impl NewHumitureData {
     }
 
     // get new data from bytes string
-    pub fn from_string(bytes: &str) -> Result<Self, std::io::Error> {
+    pub fn from_string(bytes: &str) -> Result<Self, PkgError> {
         let mut t = 0.0;
         let mut h = 0.0;
         let mut sn = "";
@@ -64,15 +64,22 @@ impl NewHumitureData {
                 // info!("id={}", id);
                 // info!("sn={}", sn);
                 // info!("t={}, h={}", t, h);
+            } else {
+                return Err(PkgError::new(
+                    String::from("pkg"),
+                    String::from("bad package head"),
+                ));
             }
         }
 
+        // get current time
         let fmt = "%Y-%m-%d %H:%M:%S";
         let naive = Local::now().format(fmt).to_string();
+        let now = NaiveDateTime::parse_from_str(&naive, fmt).unwrap();
 
         Ok(NewHumitureData {
             sn: sn.to_string(),
-            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            ts: now,
             device_id: id.to_string(),
             temperature: t,
             humidity: h,
