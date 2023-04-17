@@ -42,6 +42,21 @@ impl NewHumitureData {
         }
     }
 
+    // generate a sin/cos wave for test
+    pub fn test_wave(r: f32, angle: f32) -> Self {
+        let fmt = "%Y-%m-%d %H:%M:%S";
+        let naive = Local::now().format(fmt).to_string();
+        info!("ts: {}", naive);
+
+        NewHumitureData {
+            sn: String::from("00000001"),
+            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            device_id: String::from("test"),
+            temperature: r * angle.sin(),
+            humidity: r * angle.cos(),
+        }
+    }
+
     // get new data from bytes string
     pub fn from_string(bytes: &str) -> Result<Self, PkgError> {
         let mut t = 0.0;
