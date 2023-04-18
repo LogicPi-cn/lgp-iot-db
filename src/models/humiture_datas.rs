@@ -52,8 +52,8 @@ impl NewHumitureData {
             sn: String::from("00000002"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
             device_id: String::from("test_wave"),
-            temperature: r * (angle * 3.1415926 / 360.0).sin(),
-            humidity: r * (angle * 3.1415926 / 360.0).cos(),
+            temperature: r * (angle * 3.1415926 / 180.0).sin(),
+            humidity: r * (angle * 3.1415926 / 180.0).cos(),
         }
     }
 
