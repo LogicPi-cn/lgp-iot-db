@@ -96,14 +96,19 @@ impl NewHumitureData {
                         debug!("t={}, h={}", t, h);
                         debug!("ts={}", ts);
 
-                        // add the vector
-                        result.push(NewHumitureData {
-                            sn: hex::encode(sn),
-                            ts,
-                            device_id: hex::encode(id),
-                            temperature: t,
-                            humidity: h,
-                        })
+                        // temperature and humidity check
+                        if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
+                            error!("Temperature or humidity overflow!");
+                        } else {
+                            // add the vector
+                            result.push(NewHumitureData {
+                                sn: hex::encode(sn),
+                                ts,
+                                device_id: hex::encode(id),
+                                temperature: t,
+                                humidity: h,
+                            })
+                        }
                     }
                 } else {
                     error!(
