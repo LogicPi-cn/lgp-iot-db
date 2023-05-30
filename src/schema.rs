@@ -26,9 +26,11 @@ diesel::table! {
 diesel::table! {
     humiture_datas (id) {
         id -> Int4,
+        #[max_length = 255]
         sn -> Varchar,
+        #[max_length = 255]
         device_id -> Varchar,
-        ts -> Timestamptz,
+        ts -> Timestamp,
         temperature -> Float4,
         humidity -> Float4,
     }
