@@ -3,6 +3,7 @@ use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQuer
 use log::{debug, error, info};
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt;
 
 use crate::{errors::PkgError, schema::humiture_datas, DbError};
 
@@ -24,6 +25,16 @@ pub struct NewHumitureData {
     pub device_id: String, // Device Unique ID
     pub temperature: f32,
     pub humidity: f32,
+}
+
+impl fmt::Display for NewHumitureData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "HumitureData {{ sn: {}, device_id: {}, ts: {}, temperature: {}, humidity: {} }}",
+            self.sn, self.device_id, self.ts, self.temperature, self.humidity
+        )
+    }
 }
 
 impl NewHumitureData {
