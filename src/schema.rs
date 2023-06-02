@@ -30,6 +30,8 @@ diesel::table! {
         sn -> Varchar,
         #[max_length = 255]
         device_id -> Varchar,
+        group_id -> Int4,
+        type_id -> Int4,
         ts -> Timestamp,
         temperature -> Float4,
         humidity -> Float4,

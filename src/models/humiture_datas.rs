@@ -5,13 +5,15 @@ use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::{errors::PkgError, schema::humiture_datas, DbError};
+use crate::{schema::humiture_datas, DbError};
 
 #[derive(Serialize, Deserialize, Queryable, Debug, AsChangeset)]
 pub struct HumitureData {
     pub id: i32,
     pub sn: String,        // Device Serial Number
     pub device_id: String, // Device Unique ID
+    pub group_id: i32,     // Group id
+    pub type_id: i32,      // Type
     pub ts: NaiveDateTime, // Time Stamp from device
     pub temperature: f32,
     pub humidity: f32,
@@ -21,8 +23,10 @@ pub struct HumitureData {
 #[diesel(table_name = humiture_datas)]
 pub struct NewHumitureData {
     pub sn: String,        // Device Serial Number
-    pub ts: NaiveDateTime, // Time Stamp fro device
     pub device_id: String, // Device Unique ID
+    pub group_id: i32,     // Group ID
+    pub type_id: i32,      // Type
+    pub ts: NaiveDateTime, // Time Stamp fro device
     pub temperature: f32,
     pub humidity: f32,
 }
@@ -31,11 +35,12 @@ impl fmt::Display for NewHumitureData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "HumitureData {{ sn: {}, device_id: {}, ts: {}, temperature: {}, humidity: {} }}",
-            self.sn, self.device_id, self.ts, self.temperature, self.humidity
+            "HumitureData {{ sn: {}, device_id: {}, group_id:{}, ts: {}, temperature: {}, humidity: {} }}",
+            self.sn, self.device_id, self.group_id, self.ts, self.temperature, self.humidity
         )
     }
 }
+
 
 impl NewHumitureData {
     pub fn random() -> Self {
@@ -48,6 +53,8 @@ impl NewHumitureData {
             sn: String::from("00000001"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
             device_id: String::from("test"),
+            group_id: 0,
+            type_id: 0,
             temperature: rng.gen_range(-20.0..50.0),
             humidity: rng.gen_range(1.0..100.0),
         }
@@ -63,6 +70,8 @@ impl NewHumitureData {
             sn: String::from("00000002"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
             device_id: String::from("test_wave"),
+            group_id: 0,
+            type_id: 0,
             temperature: r * (angle * 3.1415926 / 180.0).sin(),
             humidity: r * (angle * 3.1415926 / 180.0).cos(),
         }
@@ -81,6 +90,8 @@ impl NewHumitureData {
                 if len == bytes.len() - 4 {
                     let id = &bytes[3..11];
                     let sn = &bytes[11..15];
+                    let group_id = bytes[15] as i32; 
+                    let type_id = bytes[16] as i32;
 
                     // get current time
                     let fmt = "%Y-%m-%d %H:%M:%S";
@@ -116,6 +127,8 @@ impl NewHumitureData {
                                 sn: hex::encode(sn),
                                 ts,
                                 device_id: hex::encode(id),
+                                group_id,
+                                type_id,
                                 temperature: t,
                                 humidity: h,
                             })
@@ -134,50 +147,6 @@ impl NewHumitureData {
         }
 
         return result;
-    }
-
-    // get new data from bytes string
-    pub fn from_string(bytes: &str) -> Result<Self, PkgError> {
-        let mut t = 0.0;
-        let mut h = 0.0;
-        let mut sn = "";
-        let mut id = "";
-
-        // unpackage the data
-        if bytes.len() > 0 {
-            // compare the head
-            let head = "5aa5";
-            if bytes.get(..4) == head.get(..4) {
-                id = bytes.get(6..22).unwrap();
-                sn = bytes.get(22..30).unwrap();
-                let tt = u16::from_str_radix(bytes.get(46..50).unwrap(), 16).unwrap();
-                let hh = u16::from_str_radix(bytes.get(50..54).unwrap(), 16).unwrap();
-                t = tt as f32 / 10.0;
-                h = hh as f32 / 10.0;
-
-                // info!("id={}", id);
-                // info!("sn={}", sn);
-                // info!("t={}, h={}", t, h);
-            } else {
-                return Err(PkgError::new(
-                    String::from("pkg"),
-                    String::from("bad package head"),
-                ));
-            }
-        }
-
-        // get current time
-        let fmt = "%Y-%m-%d %H:%M:%S";
-        let naive = Local::now().format(fmt).to_string();
-        let now = NaiveDateTime::parse_from_str(&naive, fmt).unwrap();
-
-        Ok(NewHumitureData {
-            sn: sn.to_string(),
-            ts: now,
-            device_id: id.to_string(),
-            temperature: t,
-            humidity: h,
-        })
     }
 }
 
