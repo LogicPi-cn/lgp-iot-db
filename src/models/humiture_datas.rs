@@ -35,12 +35,17 @@ impl fmt::Display for NewHumitureData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "HumitureData {{ sn: {}, device_id: {}, group_id:{}, ts: {}, temperature: {}, humidity: {} }}",
-            self.sn, self.device_id, self.group_id, self.ts, self.temperature, self.humidity
+            "HumitureData {{ sn: {}, id: {}, group:{}, type:{}, ts: {}, t: {}℃, h: {}% }}",
+            self.sn,
+            self.device_id,
+            self.group_id,
+            self.type_id,
+            self.ts,
+            self.temperature,
+            self.humidity
         )
     }
 }
-
 
 impl NewHumitureData {
     pub fn random() -> Self {
@@ -90,7 +95,7 @@ impl NewHumitureData {
                 if len == bytes.len() - 4 {
                     let id = &bytes[3..11];
                     let sn = &bytes[11..15];
-                    let group_id = bytes[15] as i32; 
+                    let group_id = bytes[15] as i32;
                     let type_id = bytes[16] as i32;
 
                     // get current time
@@ -113,17 +118,11 @@ impl NewHumitureData {
                         // seperate the time(2h) into n slices
                         let ts = now - Duration::minutes(((n - i) * (120 / n)).into());
 
-                        debug!("id={:?}", hex::encode(id));
-                        debug!("sn={:?}", hex::encode(sn));
-                        debug!("t={}, h={}", t, h);
-                        debug!("ts={}", ts);
-
                         // temperature and humidity check
                         if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
                             error!("Temperature or humidity overflow!");
                         } else {
-                            // add the vector
-                            result.push(NewHumitureData {
+                            let new_data = NewHumitureData {
                                 sn: hex::encode(sn),
                                 ts,
                                 device_id: hex::encode(id),
@@ -131,7 +130,12 @@ impl NewHumitureData {
                                 type_id,
                                 temperature: t,
                                 humidity: h,
-                            })
+                            };
+
+                            debug!("{}", new_data);
+
+                            // add the vector
+                            result.push(new_data);
                         }
                     }
                 } else {
