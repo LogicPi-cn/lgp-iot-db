@@ -120,7 +120,7 @@ impl NewHumitureData {
 
                         // temperature and humidity check
                         if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
-                            error!("Temperature or humidity overflow!");
+                            error!("Temperature or humidity overflow! {}", ts.to_string());
                         } else {
                             let new_data = NewHumitureData {
                                 sn: hex::encode(sn),
