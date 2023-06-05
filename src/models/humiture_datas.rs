@@ -98,6 +98,24 @@ impl NewHumitureData {
                     let group_id = bytes[15] as i32;
                     let type_id = bytes[16] as i32;
 
+                    // Time Interval
+                    let interval = if len == 70 {
+                        // 12 datas
+                        ((bytes[72] as u8) >> 1) & 0x07
+                    } else if len == 118 {
+                        // 24 datas
+                        ((bytes[120] as u8) >> 1) & 0x07
+                    } else {
+                        // single data
+                        ((bytes[28] as u8) >> 1) & 0x07
+                    };
+
+                    // 000 -> 5min
+                    // 001 -> 10min
+                    // .........
+                    // 111 -> 40min
+                    let interval = ((interval + 1) * 5) as i32;
+
                     // get current time
                     let fmt = "%Y-%m-%d %H:%M:%S";
                     let naive = Local::now().format(fmt).to_string();
@@ -115,8 +133,8 @@ impl NewHumitureData {
                         let t = tt as f32 / 10.0;
                         let h = hh as f32 / 10.0;
 
-                        // seperate the time(2h) into n slices
-                        let ts = now - Duration::minutes(((n - i) * (120 / n)).into());
+                        // seperate the time(1h/2h/4h) into n slices
+                        let ts = now - Duration::minutes((((n - i) * interval) as i32).into());
 
                         // temperature and humidity check
                         if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
