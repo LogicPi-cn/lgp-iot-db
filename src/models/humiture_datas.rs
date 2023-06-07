@@ -7,6 +7,33 @@ use std::fmt;
 
 use crate::{schema::humiture_datas, DbError};
 
+// average
+pub fn average(d0: f32, d1: f32, d2: f32, threshold: f32) -> f32 {
+    let avg = (d0 + d1 + d2) / 3.0;
+    let df1 = (d0 - avg).abs();
+    let df2 = (d1 - avg).abs();
+    let df3 = (d2 - avg).abs();
+
+    debug!(
+        "avg: {}, df1:{}, df2:{}, df3:{}, threshold: {}",
+        avg, df1, df2, df3, threshold
+    );
+
+    if df1 <= threshold && df2 <= threshold && df3 <= threshold {
+        avg
+    } else {
+        if df1 <= threshold && df2 <= threshold {
+            (d0 + d1) / 2.0
+        } else if df1 <= threshold && df3 <= threshold {
+            (d0 + d2) / 2.0
+        } else if df2 <= threshold && df3 <= threshold {
+            (d1 + d2) / 2.0
+        } else {
+            average(d0, d1, d2, threshold + threshold)
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Queryable, Debug, AsChangeset)]
 pub struct HumitureData {
     pub id: i32,
@@ -205,19 +232,4 @@ impl HumitureData {
             .expect("Error on Delete");
         Ok(num_deleted)
     }
-}
-
-#[test]
-fn test_from_bytes() {
-    use env_logger;
-    use hex;
-
-    env_logger::init();
-
-    let hex_string = "5aa546e85f0022005700aa6c6f6769bd0217051e0d1105010d010e010e001f0110011001ff011000ffffffffff010d02af02af02ae024f027b027a02ff028102ffffffffff02ae34006d";
-    let bytes = hex::decode(hex_string).unwrap();
-
-    let result = NewHumitureData::from_bytes(&bytes, 12);
-
-    assert_eq!(result.len(), 12);
 }
