@@ -110,7 +110,7 @@ impl NewHumitureData {
         NewHumitureData {
             sn: String::from("00000002"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
-            device_id: String::from("5555666677778888"),
+            device_id: String::from("1111222233334444"),
             group_id: 0,
             type_id: 0,
             temperature: r * (angle * 3.1415926 / 180.0).sin(),
