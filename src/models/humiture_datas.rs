@@ -1,7 +1,7 @@
 use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
 use crc::{Crc, CRC_8_MAXIM_DOW};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
@@ -88,12 +88,12 @@ impl NewHumitureData {
         let mut rng = rand::thread_rng();
         let fmt = "%Y-%m-%d %H:%M:%S";
         let naive = Local::now().format(fmt).to_string();
-        info!("ts: {}", naive);
+        // info!("ts: {}", naive);
 
         NewHumitureData {
             sn: String::from("00000001"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
-            device_id: String::from("1111222233334444"),
+            device_id: String::from("0000111122223333"),
             group_id: 0,
             type_id: 0,
             temperature: rng.gen_range(-20.0..50.0),
@@ -105,12 +105,12 @@ impl NewHumitureData {
     pub fn test_wave(r: f32, angle: f32) -> Self {
         let fmt = "%Y-%m-%d %H:%M:%S";
         let naive = Local::now().format(fmt).to_string();
-        info!("ts: {}", naive);
+        // info!("ts: {}", naive);
 
         NewHumitureData {
             sn: String::from("00000002"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
-            device_id: String::from("1111222233334444"),
+            device_id: String::from("0000111122223333"),
             group_id: 0,
             type_id: 0,
             temperature: r * (angle * 3.1415926 / 180.0).sin(),
@@ -128,11 +128,16 @@ impl NewHumitureData {
         // length
         bytes.push(26);
         // id
-        push_hex_str_into_vector(&mut bytes, &self.device_id);
+        bytes.extend_from_slice(&hex::decode(&self.device_id).unwrap());
         // sn
-        push_hex_str_into_vector(&mut bytes, &self.sn);
+        bytes.extend_from_slice(&hex::decode(&self.sn).unwrap());
         // group id
-        bytes.extend_from_slice(&self.group_id.to_le_bytes());
+        bytes.push(self.group_id as u8);
+
+        // debug!("bytes length = {}", bytes.len());
+
+        // type
+        bytes.push(self.type_id as u8);
 
         // date
         let dt = self.ts;
@@ -145,7 +150,9 @@ impl NewHumitureData {
             dt.minute(),
             dt.second()
         );
-        push_hex_str_into_vector(&mut bytes, &hex_date);
+        bytes.extend_from_slice(&hex::decode(&hex_date).unwrap());
+
+        // debug!("bytes length = {}", bytes.len());
 
         // temperature & humidity
         let temperature_x10 = (self.temperature * 10.0) as u16;
@@ -164,7 +171,7 @@ impl NewHumitureData {
 
         bytes.push(crc);
 
-        debug!("bytes length = {}", bytes.len());
+        // debug!("bytes length = {}", bytes.len());
 
         bytes
     }
@@ -225,7 +232,7 @@ impl NewHumitureData {
 
                         // temperature and humidity check
                         if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
-                            error!(
+                            warn!(
                                 "Humiture Overflow! t:{}, h:{}, ts:{}, id:{}, sn:{}, group:{}, type:{}",
                                 t,h,
                                 ts.to_string(),

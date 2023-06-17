@@ -39,8 +39,10 @@ fn test_to_bytes() {
     init();
 
     let bytes = NewHumitureData::random().to_bytes();
-
     let result = NewHumitureData::from_bytes(&bytes, 1);
+    assert_eq!(result.len(), 1);
 
+    let bytes = NewHumitureData::test_wave(100.0, 20.0).to_bytes();
+    let result = NewHumitureData::from_bytes(&bytes, 1);
     assert_eq!(result.len(), 1);
 }
