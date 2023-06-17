@@ -1,4 +1,5 @@
-use chrono::{Duration, Local, NaiveDateTime};
+use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
+use crc::{Crc, CRC_8_MAXIM_DOW};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
 use log::{debug, error, info};
 use rand::Rng;
@@ -31,6 +32,14 @@ pub fn average(d0: f32, d1: f32, d2: f32, threshold: f32) -> f32 {
         } else {
             average(d0, d1, d2, threshold + threshold)
         }
+    }
+}
+
+// push hex str into vector
+pub fn push_hex_str_into_vector(bytes: &mut Vec<u8>, sss: &str) {
+    for i in (0..sss.len() - 2).step_by(2) {
+        let hex_byte = u8::from_str_radix(&sss[i..i + 2], 16).unwrap();
+        bytes.push(hex_byte);
     }
 }
 
@@ -84,7 +93,7 @@ impl NewHumitureData {
         NewHumitureData {
             sn: String::from("00000001"),
             ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
-            device_id: String::from("test"),
+            device_id: String::from("11111222233334444"),
             group_id: 0,
             type_id: 0,
             temperature: rng.gen_range(-20.0..50.0),
@@ -107,6 +116,57 @@ impl NewHumitureData {
             temperature: r * (angle * 3.1415926 / 180.0).sin(),
             humidity: r * (angle * 3.1415926 / 180.0).cos(),
         }
+    }
+
+    // convert to bytes
+    pub fn to_bytes(self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+        // header
+        bytes.push(0x5A);
+        bytes.push(0xA5);
+        // length
+        bytes.push(26);
+        // id
+        push_hex_str_into_vector(&mut bytes, &self.device_id);
+        // sn
+        push_hex_str_into_vector(&mut bytes, &self.sn);
+        // group id
+        bytes.extend_from_slice(&self.group_id.to_le_bytes());
+
+        // date
+        let dt = self.ts;
+        let hex_date = format!(
+            "{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            dt.year() - 2000,
+            dt.month(),
+            dt.day(),
+            dt.hour(),
+            dt.minute(),
+            dt.second()
+        );
+        push_hex_str_into_vector(&mut bytes, &hex_date);
+
+        // temperature & humidity
+        let temperature_x10 = (self.temperature * 10.0) as u16;
+        let humidity_x10 = (self.humidity * 10.0) as u16;
+        bytes.extend_from_slice(&temperature_x10.to_be_bytes());
+        bytes.extend_from_slice(&humidity_x10.to_be_bytes());
+
+        // battery
+        bytes.push(0x63);
+        // people
+        bytes.push(0x00);
+
+        // crc
+        let crc8_checksum: Crc<u8> = Crc::<u8>::new(&CRC_8_MAXIM_DOW);
+        let crc = crc8_checksum.checksum(&bytes[3..29]);
+
+        bytes.push(crc);
+
+        debug!("bytes length = {}", bytes.len());
+
+        bytes
     }
 
     // get some data from bytes

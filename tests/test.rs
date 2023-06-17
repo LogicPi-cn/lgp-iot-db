@@ -1,12 +1,13 @@
 use lgp_iot_db::models::humiture_datas::{average, NewHumitureData};
 
-use std::sync::Once;
+use std::{env, sync::Once};
 
 static INIT: Once = Once::new();
 
 pub fn init() {
     INIT.call_once(|| {
-        env_logger::init();
+        env::set_var("RUST_APP_LOG", "debug");
+        pretty_env_logger::init_custom_env("RUST_APP_LOG");
     });
 }
 
@@ -31,4 +32,15 @@ fn test_average() {
     let avg = average(25.5, 25.7, 35.0, 2.0);
 
     assert_eq!(avg, 25.6);
+}
+
+#[test]
+fn test_to_bytes() {
+    init();
+
+    let bytes = NewHumitureData::random().to_bytes();
+
+    let result = NewHumitureData::from_bytes(&bytes, 1);
+
+    assert_eq!(result.len(), 1);
 }
