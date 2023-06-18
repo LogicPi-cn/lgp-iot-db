@@ -1,7 +1,7 @@
 use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
 use crc::{Crc, CRC_8_MAXIM_DOW};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
@@ -231,7 +231,7 @@ impl NewHumitureData {
                         let ts = now - Duration::minutes((((n - i) * interval) as i32).into());
 
                         // temperature and humidity check
-                        if t >= 100.0 || t <= -40.0 || h >= 100.0 || h <= 0.0 {
+                        if t > 100.0 || t < -40.0 || h > 100.0 || h < 0.0 {
                             warn!(
                                 "Humiture Overflow! t:{}, h:{}, ts:{}, id:{}, sn:{}, group:{}, type:{}",
                                 t,h,
