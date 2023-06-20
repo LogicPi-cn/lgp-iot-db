@@ -232,7 +232,22 @@ impl NewHumitureData {
 
                         // temperature and humidity check
                         if t > 100.0 || t < -40.0 || h > 100.0 || h < 0.0 {
-                            warn!(
+                            // check if test data
+                            if group_id == 0 && type_id == 0 {
+                                let new_data = NewHumitureData {
+                                    sn: hex::encode(sn),
+                                    ts,
+                                    device_id: hex::encode(id),
+                                    group_id,
+                                    type_id,
+                                    temperature: t,
+                                    humidity: h,
+                                };
+                                debug!("{}", new_data);
+                                // add the vector
+                                result.push(new_data);
+                            } else {
+                                warn!(
                                 "Humiture Overflow! t:{}, h:{}, ts:{}, id:{}, sn:{}, group:{}, type:{}",
                                 t,h,
                                 ts.to_string(),
@@ -240,7 +255,8 @@ impl NewHumitureData {
                                 hex::encode(sn),
                                 group_id,
                                 type_id
-                            );
+                            )
+                            }
                         } else {
                             let new_data = NewHumitureData {
                                 sn: hex::encode(sn),
