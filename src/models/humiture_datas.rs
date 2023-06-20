@@ -67,6 +67,7 @@ pub struct NewHumitureData {
     pub humidity: f32,
 }
 
+// print
 impl fmt::Display for NewHumitureData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -84,6 +85,20 @@ impl fmt::Display for NewHumitureData {
 }
 
 impl NewHumitureData {
+    pub fn new(sn: &str, device_id: &str, group_id: i32, type_id: i32, t: f32, h: f32) -> Self {
+        let fmt = "%Y-%m-%d %H:%M:%S";
+        let naive = Local::now().format(fmt).to_string();
+        NewHumitureData {
+            sn: sn.to_string(),
+            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            device_id: device_id.to_string(),
+            group_id,
+            type_id,
+            temperature: t,
+            humidity: h,
+        }
+    }
+
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         let fmt = "%Y-%m-%d %H:%M:%S";
@@ -155,8 +170,8 @@ impl NewHumitureData {
         // debug!("bytes length = {}", bytes.len());
 
         // temperature & humidity
-        let temperature_x10 = (self.temperature * 10.0) as u16;
-        let humidity_x10 = (self.humidity * 10.0) as u16;
+        let temperature_x10 = (self.temperature * 10.0) as i16;
+        let humidity_x10 = (self.humidity * 10.0) as i16;
         bytes.extend_from_slice(&temperature_x10.to_be_bytes());
         bytes.extend_from_slice(&humidity_x10.to_be_bytes());
 
@@ -216,11 +231,11 @@ impl NewHumitureData {
                     let now = NaiveDateTime::parse_from_str(&naive, fmt).unwrap();
 
                     for i in 0..n {
-                        let tt = u16::from_be_bytes([
+                        let tt = i16::from_be_bytes([
                             bytes[(23 + i * 2) as usize],
                             bytes[(24 + i * 2) as usize],
                         ]);
-                        let hh = u16::from_be_bytes([
+                        let hh = i16::from_be_bytes([
                             bytes[(23 + i * 2 + 2 * n) as usize],
                             bytes[(24 + i * 2 + 2 * n) as usize],
                         ]);
