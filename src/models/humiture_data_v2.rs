@@ -4,6 +4,7 @@ use log::{debug, error, warn};
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
+use taos::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HumitureData {
@@ -35,10 +36,9 @@ impl fmt::Display for HumitureData {
 
 impl HumitureData {
     pub fn new(sn: i32, device_id: i64, group_id: i32, type_id: i32, t: f32, h: f32) -> Self {
-        let fmt = "%Y-%m-%d %H:%M:%S";
-        let naive = Local::now().format(fmt).to_string();
+        let naive = Local::now().timestamp_millis();
         HumitureData {
-            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
             sn,
             device_id,
             group_id,
@@ -50,12 +50,10 @@ impl HumitureData {
 
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
-        let fmt = "%Y-%m-%d %H:%M:%S";
-        let naive = Local::now().format(fmt).to_string();
-        // info!("ts: {}", naive);
+        let naive = Local::now().timestamp_millis();
 
         HumitureData {
-            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
             sn: 0x00000001,
             device_id: 0x0000111122223333,
             group_id: 0,
@@ -67,13 +65,11 @@ impl HumitureData {
 
     // generate a sin/cos wave for test
     pub fn test_wave(r: f32, angle: f32) -> Self {
-        let fmt = "%Y-%m-%d %H:%M:%S";
-        let naive = Local::now().format(fmt).to_string();
-        // info!("ts: {}", naive);
+        let naive = Local::now().timestamp_millis();
 
         HumitureData {
             sn: 0x00000002,
-            ts: NaiveDateTime::parse_from_str(&naive, fmt).unwrap(),
+            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
             device_id: 0x0000111122223333,
             group_id: 0,
             type_id: 0,
@@ -235,3 +231,57 @@ impl HumitureData {
 }
 
 impl HumitureData {}
+
+pub async fn init_tdengine() -> Result<Taos, Error> {
+    let taos = TaosBuilder::from_dsn("taos://30.30.30.242:6030")?
+        .build()
+        .await?;
+    taos.create_database("iot").await?;
+    taos.use_database("iot").await?;
+    taos.exec(
+        "CREATE STABLE if NOT EXISTS humiture (
+    ts          TIMESTAMP,
+    sn          INT      ,
+    device_id   BIGINT   ,
+    group_id    INT      ,
+    type_id     INT      ,
+    temperature FLOAT    ,
+    humidity    FLOAT    )
+    TAGS     (groupId INT)
+    ",
+    )
+    .await?;
+
+    Ok(taos)
+}
+
+pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usize, Error> {
+    let mut stmt = Stmt::init(&taos)?;
+    stmt.prepare("INSERT INTO ? USING humiture TAGS(?) VALUES(?, ?, ?, ?, ?, ?, ?)")?;
+
+    // bind table name and tags
+    stmt.set_tbname_tags(
+        format!("group{}", new_data.group_id),
+        &[taos::Value::Int(new_data.group_id)],
+    )?;
+
+    // bind values.
+    let values = vec![
+        ColumnView::from_millis_timestamp(vec![new_data.ts.timestamp_millis()]),
+        ColumnView::from_ints(vec![new_data.sn]),
+        ColumnView::from_big_ints(vec![new_data.device_id]),
+        ColumnView::from_ints(vec![new_data.group_id]),
+        ColumnView::from_ints(vec![new_data.type_id]),
+        ColumnView::from_floats(vec![new_data.temperature]),
+        ColumnView::from_floats(vec![new_data.humidity]),
+    ];
+
+    stmt.bind(&values)?;
+    stmt.add_batch()?;
+    // execute.
+    let rows = stmt.execute()?;
+
+    debug!("Inserted {} rows", rows);
+
+    Ok(rows)
+}
