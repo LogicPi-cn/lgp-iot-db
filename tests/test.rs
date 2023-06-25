@@ -1,4 +1,4 @@
-use lgp_iot_db::models::humiture_datas::{average, NewHumitureData};
+use lgp_iot_db::models::{humiture_data_v2::HumitureData, humiture_datas::average};
 
 use std::{env, sync::Once};
 
@@ -20,7 +20,7 @@ fn test_from_bytes() {
     let hex_string = "5aa546e85f0022005700aa6c6f6769bd0217051e0d1105010d010e010e001f0110011001ff011000ffffffffff010d02af02af02ae024f027b027a02ff028102ffffffffff02ae34006d";
     let bytes = hex::decode(hex_string).unwrap();
 
-    let result = NewHumitureData::from_bytes(&bytes, 12);
+    let result = HumitureData::from_bytes(&bytes, 12);
 
     assert_eq!(result.len(), 10);
 }
@@ -38,7 +38,7 @@ fn test_average() {
 fn test_to_bytes() {
     init();
 
-    let bytes = NewHumitureData::new("00000000", "0000111122223333", 0, 0, -20.5, -10.5).to_bytes();
-    let result = NewHumitureData::from_bytes(&bytes, 1);
+    let bytes = HumitureData::new(0x00000001, 0x0000111122223333, 0, 0, -20.5, -10.5).to_bytes();
+    let result = HumitureData::from_bytes(&bytes, 1);
     assert_eq!(result.len(), 1);
 }
