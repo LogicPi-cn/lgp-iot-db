@@ -331,3 +331,16 @@ impl HumitureData {
         Ok(num_deleted)
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::models::humiture_datas::average;
+
+    #[test]
+    fn test_average() {
+        let avg = average(25.5, 25.7, 35.0, 2.0);
+
+        assert_eq!(avg, 25.6);
+    }
+}
