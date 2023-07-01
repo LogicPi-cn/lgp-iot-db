@@ -44,10 +44,13 @@ impl AdxlData {
     }
 }
 
-pub async fn init_tdengine_adxl(database_url: &str) -> anyhow::Result<Taos, taos::Error> {
+pub async fn init_tdengine_adxl(
+    database_url: &str,
+    db_name: &str,
+) -> anyhow::Result<Taos, taos::Error> {
     let taos = TaosBuilder::from_dsn(database_url)?.build().await?;
-    taos.create_database("adxl").await?;
-    taos.use_database("adxl").await?;
+    taos.create_database(db_name).await?;
+    taos.use_database(db_name).await?;
     taos::sync::Queryable::exec(
         &taos,
         "CREATE STABLE if NOT EXISTS adxl355 (

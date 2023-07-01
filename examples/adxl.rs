@@ -3,7 +3,7 @@ use taos::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let taos = init_tdengine_adxl("taos://localhost:6030").await?;
+    let taos = init_tdengine_adxl("taos://localhost:6030", "adxl_test").await?;
 
     let random_data = AdxlData::_random();
     insert_adxl(random_data, &taos).await?;
