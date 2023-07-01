@@ -1,3 +1,5 @@
+use std::fmt;
+
 use chrono::{Local, NaiveDateTime};
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
@@ -13,6 +15,17 @@ pub struct AdxlData {
     pub z: f32,
     pub t: f32,
     pub bat: f32,
+}
+
+// print
+impl fmt::Display for AdxlData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "AdxlData {{ id: {}, ts: {}, x: {}, y: {}, z: {}, t: {}℃, bat: {}V }}",
+            self.device_id, self.ts, self.x, self.y, self.z, self.t, self.bat
+        )
+    }
 }
 
 impl AdxlData {
