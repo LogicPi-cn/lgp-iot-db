@@ -80,33 +80,3 @@ pub async fn insert_adxl(new_data: AdxlData, taos: &Taos) -> Result<usize, Error
 
     Ok(rows)
 }
-
-pub async fn query_adxl(device_id: i32, taos: &Taos) -> Vec<AdxlData> {
-    let mut datas = Vec::new();
-
-    let mut result = taos
-        .query("SELECT ts, x,y,z,t,bat FROM adxl355 LIMIT 1")
-        .await
-        .unwrap();
-
-    // print column names
-    let meta = result.fields();
-    println!("{}", meta.iter().map(|field| field.name()).join("\t"));
-
-    let rows = result.rows();
-
-    // print rows
-    // let rows = result.rows();
-    // for row in rows {
-    //     let row = row?;
-    //     for (_name, value) in row {
-    //         print!("{}\t", value);
-    //     }
-    //     println!();
-    // }
-
-    datas
-}
-
-#[cfg(test)]
-mod tests {}
