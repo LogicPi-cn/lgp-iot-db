@@ -125,7 +125,7 @@ pub async fn query_adxl(device_id: i32, taos: &Taos) -> Vec<AdxlData> {
     let mut datas = Vec::new();
 
     let mut result = taos
-        .query("SELECT ts, x,y,z FROM adxl355 LIMIT 1")
+        .query("SELECT ts, x,y,z,xf,yf,zf,ax,ay,az,axf,ayf,azf,t,tf,bat FROM adxl355 LIMIT 1")
         .await
         .unwrap();
 
@@ -133,15 +133,17 @@ pub async fn query_adxl(device_id: i32, taos: &Taos) -> Vec<AdxlData> {
     let meta = result.fields();
     println!("{}", meta.iter().map(|field| field.name()).join("\t"));
 
-    // print rows
     let rows = result.rows();
-    for row in rows {
-        let row = row?;
-        for (_name, value) in row {
-            print!("{}\t", value);
-        }
-        println!();
-    }
+
+    // print rows
+    // let rows = result.rows();
+    // for row in rows {
+    //     let row = row?;
+    //     for (_name, value) in row {
+    //         print!("{}\t", value);
+    //     }
+    //     println!();
+    // }
 
     datas
 }
