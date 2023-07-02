@@ -42,6 +42,19 @@ impl AdxlData {
             bat: rng.gen_range(1.0..100.0),
         }
     }
+    // generate a sin/cos wave for test
+    pub fn test_wave(r: f32, angle: f32) -> Self {
+        let naive = Local::now().timestamp_millis();
+        AdxlData {
+            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            device_id: 9999,
+            x: r * (angle * 3.1415926 / 180.0).sin(),
+            y: r * ((angle + 90.0) * 3.1415926 / 180.0).sin(),
+            z: r * ((angle + 180.0) * 3.1415926 / 180.0).sin(),
+            t: r * ((angle + 270.0) * 3.1415926 / 180.0).sin(),
+            bat: 100.0,
+        }
+    }
 }
 
 pub async fn init_tdengine_adxl(
