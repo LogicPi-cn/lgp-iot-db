@@ -232,12 +232,10 @@ impl HumitureData {
 
 impl HumitureData {}
 
-pub async fn init_tdengine() -> Result<Taos, Error> {
-    let taos = TaosBuilder::from_dsn("taos://30.30.30.242:6030")?
-        .build()
-        .await?;
-    taos.create_database("iot").await?;
-    taos.use_database("iot").await?;
+pub async fn init_tdengine_humiture(database_url: &str, db_name: &str) -> Result<Taos, Error> {
+    let taos = TaosBuilder::from_dsn(database_url)?.build().await?;
+    taos.create_database(db_name).await?;
+    taos.use_database(db_name).await?;
     taos.exec(
         "CREATE STABLE if NOT EXISTS humiture (
     ts          TIMESTAMP,
