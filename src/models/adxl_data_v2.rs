@@ -22,7 +22,7 @@ impl fmt::Display for AdxlData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "AdxlData {{ id: {}, ts: {}, x: {}, y: {}, z: {}, t: {}℃, bat: {}V }}",
+            "AdxlData {{ id: {}, ts: {}, x: {}, y: {}, z: {}, t: {}℃, bat: {}% }}",
             self.device_id, self.ts, self.x, self.y, self.z, self.t, self.bat
         )
     }
