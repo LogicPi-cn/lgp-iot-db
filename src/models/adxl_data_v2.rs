@@ -1,15 +1,16 @@
 use std::fmt;
 
-use chrono::{Local, NaiveDateTime};
+use chrono::{DateTime, Local};
+use log::error;
 use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 
 use taos::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AdxlData {
     pub device_id: i32,
-    pub ts: NaiveDateTime,
+    pub ts: DateTime<Local>,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -31,9 +32,8 @@ impl fmt::Display for AdxlData {
 impl AdxlData {
     pub fn _random() -> Self {
         let mut rng = rand::thread_rng();
-        let naive = Local::now().timestamp_millis();
         AdxlData {
-            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            ts: Local::now(),
             device_id: 9999,
             x: rng.gen_range(-1.0..1.0),
             y: rng.gen_range(-1.0..1.0),
@@ -44,9 +44,8 @@ impl AdxlData {
     }
     // generate a sin/cos wave for test
     pub fn test_wave(r: f32, angle: f32) -> Self {
-        let naive = Local::now().timestamp_millis();
         AdxlData {
-            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            ts: Local::now(),
             device_id: 9999,
             x: r * (angle * 3.1415926 / 180.0).sin(),
             y: r * ((angle + 90.0) * 3.1415926 / 180.0).sin(),
@@ -108,4 +107,25 @@ pub async fn insert_adxl(new_data: AdxlData, taos: &Taos) -> Result<usize, Error
     let rows = stmt.execute()?;
 
     Ok(rows)
+}
+
+pub async fn query_adxl(taos: &Taos, device_id: i32, n: i32) -> Vec<AdxlData> {
+    let sql = format!(
+        "SELECT * FROM adxl355.{} LIMIT {}",
+        format!("g{:06}", device_id),
+        n
+    );
+
+    let mut result = taos.query(sql).await.unwrap();
+
+    let mut records = Vec::new();
+
+    match result.deserialize().try_collect().await {
+        Ok(nrecords) => records = nrecords,
+        Err(e) => {
+            error!("query error: {:?}", e);
+        }
+    }
+
+    records
 }

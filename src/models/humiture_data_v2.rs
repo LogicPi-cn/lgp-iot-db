@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Local, NaiveDateTime, Timelike};
+use chrono::{DateTime, Datelike, Duration, Local, Timelike};
 use crc::{Crc, CRC_8_MAXIM_DOW};
 use log::{debug, error, warn};
 use rand::Rng;
@@ -8,11 +8,11 @@ use taos::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HumitureData {
-    pub ts: NaiveDateTime, // Time Stamp from device
-    pub sn: i32,           // Device Serial Number
-    pub device_id: i64,    // Device Unique ID
-    pub group_id: i32,     // Group id
-    pub type_id: i32,      // Type
+    pub ts: DateTime<Local>, // Time Stamp from device
+    pub sn: i32,             // Device Serial Number
+    pub device_id: i64,      // Device Unique ID
+    pub group_id: i32,       // Group id
+    pub type_id: i32,        // Type
     pub temperature: f32,
     pub humidity: f32,
 }
@@ -36,9 +36,8 @@ impl fmt::Display for HumitureData {
 
 impl HumitureData {
     pub fn new(sn: i32, device_id: i64, group_id: i32, type_id: i32, t: f32, h: f32) -> Self {
-        let naive = Local::now().timestamp_millis();
         HumitureData {
-            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            ts: Local::now(),
             sn,
             device_id,
             group_id,
@@ -50,10 +49,8 @@ impl HumitureData {
 
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
-        let naive = Local::now().timestamp_millis();
-
         HumitureData {
-            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            ts: Local::now(),
             sn: 0x00000001,
             device_id: 0x0000111122223333,
             group_id: 0,
@@ -65,11 +62,9 @@ impl HumitureData {
 
     // generate a sin/cos wave for test
     pub fn test_wave(r: f32, angle: f32) -> Self {
-        let naive = Local::now().timestamp_millis();
-
         HumitureData {
             sn: 0x00000002,
-            ts: NaiveDateTime::from_timestamp_millis(naive).unwrap(),
+            ts: Local::now(),
             device_id: 0x0000111122223333,
             group_id: 0,
             type_id: 0,
@@ -171,9 +166,7 @@ impl HumitureData {
                     let interval = ((interval + 1) * 5) as i32;
 
                     // get current time
-                    let fmt = "%Y-%m-%d %H:%M:%S";
-                    let naive = Local::now().format(fmt).to_string();
-                    let now = NaiveDateTime::parse_from_str(&naive, fmt).unwrap();
+                    let now = Local::now();
 
                     for i in 0..n {
                         let tt = i16::from_be_bytes([
@@ -259,7 +252,7 @@ pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usiz
 
     // bind table name and tags
     stmt.set_tbname_tags(
-        format!("group{}", new_data.group_id),
+        format!("g{:06}", new_data.group_id),
         &[taos::Value::Int(new_data.group_id)],
     )?;
 
@@ -282,6 +275,27 @@ pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usiz
     debug!("Inserted {} rows", rows);
 
     Ok(rows)
+}
+
+pub async fn query_humiture(taos: &Taos, group_id: i32, n: i32) -> Vec<HumitureData> {
+    let sql = format!(
+        "SELECT * FROM humiture.{} LIMIT {}",
+        format!("g{:06}", group_id),
+        n
+    );
+
+    let mut result = taos.query(sql).await.unwrap();
+
+    let mut records = Vec::new();
+
+    match result.deserialize().try_collect().await {
+        Ok(nrecords) => records = nrecords,
+        Err(e) => {
+            error!("query error: {:?}", e);
+        }
+    }
+
+    records
 }
 
 #[cfg(test)]
