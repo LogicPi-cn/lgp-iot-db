@@ -1,9 +1,14 @@
 #[cfg(test)]
 mod test_humiture {
 
+    use chrono::{Duration, Local};
     use std::{env, sync::Once};
+    use tokio::test;
 
-    use lgp_iot_db::models::humiture_data_v2::HumitureData;
+    use lgp_iot_db::models::humiture_data_v2::{
+        init_tdengine_humiture, query_humiture_by_date, query_humiture_by_group,
+        query_humiture_by_sn, HumitureData,
+    };
 
     static INIT: Once = Once::new();
 
@@ -15,7 +20,7 @@ mod test_humiture {
     }
 
     #[test]
-    fn test_to_bytes() {
+    async fn test_to_bytes() {
         init();
 
         let bytes =
@@ -25,7 +30,7 @@ mod test_humiture {
     }
 
     #[test]
-    fn test_from_bytes() {
+    async fn test_from_bytes() {
         use hex;
 
         init();
@@ -36,5 +41,36 @@ mod test_humiture {
         let result = HumitureData::from_bytes(&bytes, 12);
 
         assert_eq!(result.len(), 10);
+    }
+
+    #[test]
+    async fn test_query() {
+        init();
+
+        let taos = init_tdengine_humiture("taos://db.21up.cn:6030", "humiture")
+            .await
+            .unwrap();
+
+        // let random_data = HumitureData::random();
+        // insert_humiture(random_data, &taos).await?;
+
+        let now = Local::now();
+        let last = now - Duration::minutes(30);
+
+        let records = query_humiture_by_date(
+            &taos,
+            0x0000111122223333,
+            last.timestamp_millis(),
+            now.timestamp_millis(),
+        )
+        .await;
+
+        assert_eq!(records.len(), 149);
+
+        let records = query_humiture_by_group(&taos, 0, 30).await;
+        assert_eq!(records.len(), 30);
+
+        let records = query_humiture_by_sn(&taos, 2, 10).await;
+        assert_eq!(records.len(), 10);
     }
 }

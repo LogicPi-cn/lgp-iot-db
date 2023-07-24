@@ -3,7 +3,8 @@ mod test_adxl {
 
     use chrono::{Duration, Local};
     use lgp_iot_db::models::adxl_data_v2::{
-        init_tdengine_adxl, query_adxl_by_date, query_adxl_by_group, query_adxl_by_id,
+        init_tdengine_adxl, insert_adxl, query_adxl_by_date, query_adxl_by_group, query_adxl_by_id,
+        AdxlData,
     };
     use std::{env, sync::Once};
     use tokio::test;
@@ -15,6 +16,19 @@ mod test_adxl {
             env::set_var("RUST_APP_LOG", "info");
             pretty_env_logger::init_custom_env("RUST_APP_LOG");
         });
+    }
+
+    #[test]
+    async fn tes_insert() {
+        init();
+        let taos = init_tdengine_adxl("taos://localhost:6030", "adxl355")
+            .await
+            .unwrap();
+
+        let new_data = AdxlData::_random();
+        let result = insert_adxl(new_data, &taos).await.unwrap();
+
+        assert_eq!(result, 1);
     }
 
     #[test]
