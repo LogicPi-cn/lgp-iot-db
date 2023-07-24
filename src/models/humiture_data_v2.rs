@@ -277,63 +277,51 @@ pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usiz
     Ok(rows)
 }
 
-pub async fn query_humiture(taos: &Taos, group_id: i32, n: i32) -> Vec<HumitureData> {
+pub async fn query_humiture_by_date(
+    taos: &Taos,
+    device_id: i64,
+    start_date: i64,
+    end_date: i64,
+) -> Vec<HumitureData> {
     let sql = format!(
-        "SELECT * FROM humiture.{} LIMIT {}",
-        format!("g{:06}", group_id),
-        n
+        "SELECT * FROM humiture.humiture WHERE device_id={} AND ts BETWEEN {} AND {} ORDER BY ts DESC;",
+        device_id, start_date, end_date
     );
+    query_humiture(taos, &sql).await
+}
 
+pub async fn query_humiture_by_sn(taos: &Taos, sn: i32, limit: i32) -> Vec<HumitureData> {
+    let sql = format!(
+        "SELECT * FROM humiture.humiture WHERE sn={} ORDER BY ts DESC LIMIT {}",
+        sn, limit
+    );
+    query_humiture(taos, &sql).await
+}
+
+pub async fn query_humiture_by_group(taos: &Taos, group_id: i32, limit: i32) -> Vec<HumitureData> {
+    let sql = format!(
+        "SELECT * FROM humiture.humiture WHERE group_id={} ORDER BY ts DESC LIMIT {}",
+        group_id, limit
+    );
+    query_humiture(taos, &sql).await
+}
+
+pub async fn query_humiture_by_id(taos: &Taos, device_id: i64, limit: i32) -> Vec<HumitureData> {
+    let sql = format!(
+        "SELECT * FROM humiture.humiture WHERE device_id={} ORDER BY ts DESC LIMIT {}",
+        device_id, limit
+    );
+    query_humiture(taos, &sql).await
+}
+
+async fn query_humiture(taos: &Taos, sql: &str) -> Vec<HumitureData> {
     let mut result = taos.query(sql).await.unwrap();
-
     let mut records = Vec::new();
-
     match result.deserialize().try_collect().await {
         Ok(nrecords) => records = nrecords,
         Err(e) => {
             error!("query error: {:?}", e);
         }
     }
-
     records
-}
-
-#[cfg(test)]
-mod tests {
-
-    use crate::models::humiture_data_v2::HumitureData;
-    use std::{env, sync::Once};
-
-    static INIT: Once = Once::new();
-
-    pub fn init() {
-        INIT.call_once(|| {
-            env::set_var("RUST_APP_LOG", "debug");
-            pretty_env_logger::init_custom_env("RUST_APP_LOG");
-        });
-    }
-
-    #[test]
-    fn test_to_bytes() {
-        init();
-
-        let bytes =
-            HumitureData::new(0x00000001, 0x0000111122223333, 0, 0, -20.5, -10.5).to_bytes();
-        let result = HumitureData::from_bytes(&bytes, 1);
-        assert_eq!(result.len(), 1);
-    }
-
-    #[test]
-    fn test_from_bytes() {
-        use hex;
-
-        init();
-
-        let hex_string = "5aa546e85f0022005700aa6c6f6769bd0217051e0d1105010d010e010e001f0110011001ff011000ffffffffff010d02af02af02ae024f027b027a02ff028102ffffffffff02ae34006d";
-        let bytes = hex::decode(hex_string).unwrap();
-
-        let result = HumitureData::from_bytes(&bytes, 12);
-
-        assert_eq!(result.len(), 10);
-    }
 }

@@ -109,23 +109,44 @@ pub async fn insert_adxl(new_data: AdxlData, taos: &Taos) -> Result<usize, Error
     Ok(rows)
 }
 
-pub async fn query_adxl(taos: &Taos, device_id: i32, n: i32) -> Vec<AdxlData> {
+pub async fn query_adxl_by_date(
+    taos: &Taos,
+    device_id: i32,
+    start_date: i64,
+    end_date: i64,
+) -> Vec<AdxlData> {
     let sql = format!(
-        "SELECT * FROM adxl355.{} LIMIT {}",
-        format!("g{:06}", device_id),
-        n
+        "SELECT * FROM adxl355.adxl355 WHERE device_id={} AND ts BETWEEN {} AND {} ORDER BY ts DESC;",
+        device_id, start_date, end_date
     );
+    query_adxl(taos, &sql).await
+}
 
+pub async fn query_adxl_by_group(taos: &Taos, group_id: i32, limit: i32) -> Vec<AdxlData> {
+    let sql = format!(
+        "SELECT * FROM adxl355.{} ORDER BY ts DESC LIMIT {}",
+        format!("g{:06}", group_id),
+        limit
+    );
+    query_adxl(taos, &sql).await
+}
+
+pub async fn query_adxl_by_id(taos: &Taos, device_id: i32, limit: i32) -> Vec<AdxlData> {
+    let sql = format!(
+        "SELECT * FROM adxl355.adxl355 WHERE device_id={} ORDER BY ts DESC LIMIT {}",
+        device_id, limit
+    );
+    query_adxl(taos, &sql).await
+}
+
+async fn query_adxl(taos: &Taos, sql: &str) -> Vec<AdxlData> {
     let mut result = taos.query(sql).await.unwrap();
-
     let mut records = Vec::new();
-
     match result.deserialize().try_collect().await {
         Ok(nrecords) => records = nrecords,
         Err(e) => {
             error!("query error: {:?}", e);
         }
     }
-
     records
 }
