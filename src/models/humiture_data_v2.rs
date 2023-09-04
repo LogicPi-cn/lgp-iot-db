@@ -247,14 +247,18 @@ pub async fn init_tdengine_humiture(database_url: &str, db_name: &str) -> Result
 }
 
 pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usize, Error> {
-    let mut stmt = Stmt::init(&taos)?;
-    stmt.prepare("INSERT INTO ? USING humiture TAGS(?) VALUES(?, ?, ?, ?, ?, ?, ?)")?;
+    let mut stmt = Stmt::init(&taos).await.unwrap();
+    stmt.prepare("INSERT INTO ? USING humiture TAGS(?) VALUES(?, ?, ?, ?, ?, ?, ?)")
+        .await
+        .unwrap();
 
     // bind table name and tags
     stmt.set_tbname_tags(
-        format!("g{:06}", new_data.group_id),
+        format!("g{:06}", new_data.group_id).as_str(),
         &[taos::Value::Int(new_data.group_id)],
-    )?;
+    )
+    .await
+    .unwrap();
 
     // bind values.
     let values = vec![
@@ -267,10 +271,10 @@ pub async fn insert_humiture(new_data: HumitureData, taos: &Taos) -> Result<usiz
         ColumnView::from_floats(vec![new_data.humidity]),
     ];
 
-    stmt.bind(&values)?;
-    stmt.add_batch()?;
+    stmt.bind(&values).await.unwrap();
+    stmt.add_batch().await.unwrap();
     // execute.
-    let rows = stmt.execute()?;
+    let rows = stmt.execute().await.unwrap();
 
     debug!("Inserted {} rows", rows);
 

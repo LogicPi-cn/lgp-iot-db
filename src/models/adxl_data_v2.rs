@@ -81,14 +81,18 @@ pub async fn init_tdengine_adxl(
 }
 
 pub async fn insert_adxl(new_data: AdxlData, taos: &Taos) -> Result<usize, Error> {
-    let mut stmt = Stmt::init(&taos)?;
-    stmt.prepare("INSERT INTO ? USING adxl355 TAGS(?) VALUES(?, ?, ?, ?, ?, ?, ?)")?;
+    let mut stmt = Stmt::init(&taos).await.unwrap();
+    stmt.prepare("INSERT INTO ? USING adxl355 TAGS(?) VALUES(?, ?, ?, ?, ?, ?, ?)")
+        .await
+        .unwrap();
 
     // bind table name and tags
     stmt.set_tbname_tags(
-        format!("g{:06}", new_data.device_id),
+        format!("g{:06}", new_data.device_id).as_str(),
         &[taos::Value::Int(new_data.device_id)],
-    )?;
+    )
+    .await
+    .unwrap();
 
     // bind values.
     let values = vec![
@@ -101,10 +105,10 @@ pub async fn insert_adxl(new_data: AdxlData, taos: &Taos) -> Result<usize, Error
         ColumnView::from_floats(vec![new_data.bat]),
     ];
 
-    stmt.bind(&values)?;
-    stmt.add_batch()?;
+    stmt.bind(&values).await.unwrap();
+    stmt.add_batch().await.unwrap();
     // execute.
-    let rows = stmt.execute()?;
+    let rows = stmt.execute().await.unwrap();
 
     Ok(rows)
 }
