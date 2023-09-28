@@ -19,7 +19,7 @@ mod test_adxl {
     }
 
     #[test]
-    async fn tes_insert() {
+    async fn test_insert() {
         init();
         let taos = init_tdengine_adxl("taos://localhost:6030", "adxl355")
             .await

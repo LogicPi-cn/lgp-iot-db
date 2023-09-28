@@ -2,6 +2,7 @@
 mod test_humiture {
 
     use chrono::{Duration, Local};
+    use log::{debug, info};
     use std::{env, sync::Once};
     use tokio::test;
 
@@ -35,12 +36,16 @@ mod test_humiture {
 
         init();
 
-        let hex_string = "5aa546e85f0022005700aa6c6f6769bd0217051e0d1105010d010e010e001f0110011001ff011000ffffffffff010d02af02af02ae024f027b027a02ff028102ffffffffff02ae34006d";
+        let hex_string = "5aa5767b9f770000005336000000380002150c0316020500be00be00c700c700be00c000c100c000c000c000c100c000bf00c000c200c200c400c300c400c300c200c300c200c203180320033803390331033203330333032b032d032f0325032d033003490352035b035b03510351034d034b035003526400da";
         let bytes = hex::decode(hex_string).unwrap();
 
-        let result = HumitureData::from_bytes(&bytes, 12);
+        let result = HumitureData::from_bytes(&bytes, 24);
 
-        assert_eq!(result.len(), 10);
+        for item in &result {
+            info!("{:?}", item);
+        }
+
+        assert_eq!(result.len(), 24);
     }
 
     #[test]
