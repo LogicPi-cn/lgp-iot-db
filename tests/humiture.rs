@@ -15,7 +15,7 @@ mod test_humiture {
 
     pub fn init() {
         INIT.call_once(|| {
-            env::set_var("RUST_APP_LOG", "info");
+            env::set_var("RUST_APP_LOG", "debug");
             pretty_env_logger::init_custom_env("RUST_APP_LOG");
         });
     }
@@ -36,7 +36,7 @@ mod test_humiture {
 
         init();
 
-        let hex_string = "5aa5767b9f770000005336000000380002150c0316020500be00be00c700c700be00c000c100c000c000c000c100c000bf00c000c200c200c400c300c400c300c200c300c200c203180320033803390331033203330333032b032d032f0325032d033003490352035b035b03510351034d034b035003526400da";
+        let hex_string = "5aa576aee6070000001f3b470000000002150b020a020400c200c200c200c200c300c300c300c400c500c600c600c700c700be00bf00bf00c000c100c100c200c300c400c600c602ab02af02b102b202b402b102b402b402af02ae02ac02a502a0029c0296028f028c0282027a026e026d0266025f025d62007c";
         let bytes = hex::decode(hex_string).unwrap();
 
         let result = HumitureData::from_bytes(&bytes, 24);

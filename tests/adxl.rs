@@ -21,7 +21,7 @@ mod test_adxl {
     #[test]
     async fn test_insert() {
         init();
-        let taos = init_tdengine_adxl("taos://localhost:6030", "adxl355")
+        let taos = init_tdengine_adxl("taos://localhost:6030", "adxl")
             .await
             .unwrap();
 
@@ -34,7 +34,7 @@ mod test_adxl {
     #[test]
     async fn test_query() {
         init();
-        let taos = init_tdengine_adxl("taos://db.21up.cn:6030", "adxl355")
+        let taos = init_tdengine_adxl("taos://db.21up.cn:6030", "adxl")
             .await
             .unwrap();
 

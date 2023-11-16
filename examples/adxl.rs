@@ -9,7 +9,7 @@ async fn main() -> anyhow::Result<()> {
     env::set_var("RUST_APP_LOG", "info");
     pretty_env_logger::init_custom_env("RUST_APP_LOG");
 
-    let taos = init_tdengine_adxl("taos://db.21up.cn:6030", "adxl355").await?;
+    let taos = init_tdengine_adxl("taos://db.21up.cn:6030", "adxl").await?;
 
     // query records in last 30mins
     let now = Local::now();
