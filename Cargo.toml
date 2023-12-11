@@ -1,12 +1,12 @@
 [package]
 name = "lgp-iot-db"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-diesel = { version = "2.1.2", features = ["postgres", "chrono", "r2d2"] }
+# diesel = { version = "2.1.2", features = ["postgres", "chrono", "r2d2"] }
 dotenv = "0.15.0"
 dotenvy = "0.15"
 log = "0.4"
